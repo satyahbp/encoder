@@ -1,23 +1,30 @@
-import React, {useState, useEffect} from 'react';
-import PropTypes, { func } from 'prop-types';
+import React, {useState, useEffect, useRef} from 'react';
+import PropTypes from 'prop-types';
 import CryptoJS from 'crypto-js';
+import {Link} from 'react-router-dom';
 
 // custom imports
-import { GENERATED_HASH_STYLE, MD5_BUTTON, SHA256_BUTTON } from '../Constants/Constants';
+import { 
+    GENERATED_HASH_STYLE, 
 
-function Body({ hash_button, change_hash_button_state }) {
+    MD5_BUTTON, 
+    SHA256_BUTTON,
+    BASE64_ENCODE_BUTTON,
+    BASE64_DECODE_BUTTON,
+
+    MD5_LINK,
+    SHA256_LINK,
+    BASE64_ENCODE_LINK,
+    BASE64_DECODE_LINK
+} from '../Constants/Constants';
+
+function Body({ hash_button }) {
 
     const [plain_text, set_plain_text] = useState("");
     const [hashed_text, set_hashed_text] = useState("Your encoded text will appear here");
+    const hashed_div = useRef(null);
 
-    function md5_click(){
-        change_hash_button_state(MD5_BUTTON);
-    }
-
-    function sha256_click(){
-        change_hash_button_state(SHA256_BUTTON);
-    }
-
+    
     function submit_hash(e){
         e.preventDefault();
         let trimmed_text = plain_text.trim();
@@ -33,7 +40,18 @@ function Body({ hash_button, change_hash_button_state }) {
                 else if (hash_button === SHA256_BUTTON){
                     new_hashed = CryptoJS.SHA256(trimmed_text)
                         .toString(CryptoJS.enc.Hex);
-                }   
+                }
+                else if (hash_button === BASE64_ENCODE_BUTTON){
+                    new_hashed = btoa(trimmed_text);
+                }
+                else if (hash_button === BASE64_DECODE_BUTTON){
+                    try{
+                        new_hashed = atob(trimmed_text);
+                    }
+                    catch (err) {
+                        alert("String is not in a proper Base64 format.");
+                    }
+                }
 
                 set_hashed_text(new_hashed);
             }
@@ -49,34 +67,58 @@ function Body({ hash_button, change_hash_button_state }) {
         }
     }
 
+    function copy_hash(){
+        let copy_text = hashed_div.current.textContent;
+        navigator.clipboard.writeText(copy_text);
+    }
+
     return (
         <>
             <div className='m-5'>
-                <button 
-                    type="button" 
-                    className={hash_button === MD5_BUTTON ? "btn btn-success me-1" : "btn btn-outline-success  me-1"} 
-                    id='md5_button'
-                    onClick={md5_click}>
-                        MD5
-                </button>
-                <button 
-                    type="button" 
-                    className={hash_button === SHA256_BUTTON? "btn btn-success ms-2" : "btn btn-outline-success ms-2" }
-                    id='sha256_button'
-                    onClick={sha256_click}>
-                        SHA256
-                </button>
-
+                <Link to={MD5_LINK}>
+                    <button 
+                        type="button" 
+                        className={hash_button === MD5_BUTTON ? "btn btn-success my-1" : "btn btn-outline-success my-1"} 
+                        id='md5_button'>
+                            MD5
+                    </button>
+                </Link>
+                
+                <Link to={SHA256_LINK}>
+                    <button 
+                        type="button" 
+                        className={hash_button === SHA256_BUTTON? "btn btn-success ms-2 my-1" : "btn btn-outline-success ms-2 my-1" }
+                        id='sha256_button'>
+                            SHA256
+                    </button>
+                </Link>
+                
+                <Link to={BASE64_ENCODE_LINK}>
+                    <button 
+                        type="button" 
+                        className={hash_button === BASE64_ENCODE_BUTTON? "btn btn-success ms-2 my-1" : "btn btn-outline-success ms-2 my-1" }
+                        id='base64_encode_button'>
+                            Base64 - Encode
+                    </button>
+                </Link>
+                
+                <Link to={BASE64_DECODE_LINK}>
+                    <button 
+                        type="button" 
+                        className={hash_button === BASE64_DECODE_BUTTON? "btn btn-success ms-2 my-1" : "btn btn-outline-success ms-2 my-1" }
+                        id='base64_decode_button'>
+                            Base64 - Decode
+                    </button>
+                </Link>
 
                 <form className='mt-3' onSubmit={submit_hash} id='hashForm'>
                     <div className="mb-3">
-                        <label htmlFor="exampleInputEmail1" className="form-label">Text (Limit: 500)</label>
+                        <label className="form-label">Text (Limit: 500)</label>
                         <textarea 
                             type="text" 
                             value={plain_text} 
                             className="form-control" 
-                            id="exampleInputEmail1" 
-                            aria-describedby="emailHelp"
+                            spellCheck="false"
                             onChange={(e) => {set_plain_text(e.target.value)}}
                             onKeyDown={handle_enter_key}
                         />
@@ -87,14 +129,36 @@ function Body({ hash_button, change_hash_button_state }) {
 
                     </div>
                 </form>
-                <div style={GENERATED_HASH_STYLE} className='my-5 p-2'>
-                    {hashed_text}
+
+                <div className='my-4'>
+                    <div className='text-end'>
+                        <button 
+                            type="button" 
+                            className="btn btn-sm btn-secondary"
+                            onClick={copy_hash}
+                        >
+                            Copy All
+                        </button>
+                    </div>
+                    
+                    <div 
+                        style={GENERATED_HASH_STYLE} 
+                        className='p-2 my-2' 
+                        ref={hashed_div}
+                    >
+                        {hashed_text}
+                    </div>
                 </div>
+                
             </div>
             
 
         </>
     )
+}
+
+Body.protoTypes = {
+    hash_button: PropTypes.string.isRequired
 }
 
 export default Body;
